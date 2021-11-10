@@ -7,12 +7,12 @@ import numpy as np
 import networkx as nx
 from  DSS_CircuitSetup import*
 
-def get_state(DSSCktobj):
+def get_state(DSSCktobj,G_init):
     #Input: object of type DSSObj.ActiveCircuit (COM interface for OpenDSS Circuit)
     #Returns: dictionary of circuit loss, bus voltage, branch powerflow, radiality of network
-    G=graph_struct(DSSCktobj) 
-    node_list=list(G.nodes())
-    Adj_mat=nx.adjacency_matrix(G,nodelist=node_list)
+    G_scenario=graph_struct(DSSCktobj) 
+    node_list=list(G_init.nodes())
+    Adj_mat=nx.adjacency_matrix(G_scenario,nodelist=node_list)
     
     DSSCktobj.dssTransformers.First
     KVA_base=DSSCktobj.dssTransformers.kva
@@ -26,7 +26,7 @@ def get_state(DSSCktobj):
         Vmagpu.append(V)
                
     I_flow=[]
-    for e in G.edges(data=True):
+    for e in G_init.edges(data=True):
         branchname=e[2]['label']
         I=Branch(DSSCktobj, branchname).Cap
         I_flow.append(I)

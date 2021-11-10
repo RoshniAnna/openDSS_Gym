@@ -17,7 +17,6 @@ def initialize():
     DSSCktobj=CktModSetup(DSSfile,sectional_swt,tie_swt) # initially the sectionalizing switches close and tie switches open
     DSSCktobj.dssSolution.Solve() #solving snapshot power flows
     G_init=graph_struct(DSSCktobj)
-    #Base_loops=DSSCktobj.dssCircuit.Topology.NumLoops
     return DSSCktobj,G_init
 
 

@@ -212,8 +212,7 @@ def graph_struct(DSSCktobj):
             tar_node=branch_obj.bus_to.split('.')[0] #extracting target bus of branch
             name=e
             DSSCktobj.dssCircuit.SetActiveElement(e)
-            if not (DSSCktobj.dssCircuit.ActiveCktElement.IsOpen(1,0)):
-               G_original.add_edge(sr_node, tar_node, label=name)
+            G_original.add_edge(sr_node, tar_node, label=name)
     
     return G_original
 

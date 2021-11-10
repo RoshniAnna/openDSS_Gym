@@ -18,7 +18,7 @@ class openDSSenv(gym.Env):
     def __init__(self):
         
         print("initializing 13-bus env with sectionalizing and tie switches")
-        self.DSSCktObj,self.G_init=initialize() # the DSSCircuit is set up and initialized
+        self.DSSCktObj,G_init=initialize() # the DSSCircuit is set up and initialized
         # Set up action and observation space variables
         n_actions=len(sectional_swt)+len(tie_swt) # the switching actions 
         self.action_space = spaces.MultiBinary(n_actions)
@@ -34,7 +34,7 @@ class openDSSenv(gym.Env):
 
     def step(self, action):
         # Getting observation before action is executed
-        observation = get_state(self.DSSCktobj) #function to get state of the network
+        observation = get_state(self.DSSCktobj, G_init) #function to get state of the network
         
         # Executing the switching action
         self.DSSCktobj=take_action(self.DSSCktobj,action) #function to implement the action
@@ -52,7 +52,7 @@ class openDSSenv(gym.Env):
 
     def reset(self):
         logging.info('resetting environment...')
-        self.DSSCktObj,base_loops=initialize()
+        self.DSSCktObj,G_init=initialize()
         # Get state observations from initial default load configuration for now
         # We will implememnt load variation in reset
         self.DSSCktobj.dssSolution.Solve()  # Solve Circuit
