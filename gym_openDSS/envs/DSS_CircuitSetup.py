@@ -1,20 +1,18 @@
 """
-In this file I set up the DSS engine.
-The objects for circuit, bus, and branch are also set up for further use in the environment.
+In this file the DSS engine is set up.
+The objects for circuit, bus, and branch are also set up for further use in the RL environment.
 This file also includes function to modify the base DSS circuit with sectionalizing and tie switch information.
-
+The translation of DSS Circuit into a graph structure is also defined here.
 """
 
-import win32com.client # DSS COM interace
-import os
-import math
-import cmath
+import win32com.client
 import numpy as np
+import math
 import networkx as nx
 
 class DSS():  # to initialize the DSS circuit object and extract results
       
-     def __init__(self,filename): 
+    def __init__(self,filename): 
         
         self.filename=filename
         self.dssObj=win32com.client.Dispatch("OpenDSSEngine.DSS") #deploying DSS Engine
@@ -32,73 +30,82 @@ class DSS():  # to initialize the DSS circuit object and extract results
             self.dssLines=self.dssCircuit.Lines
             self.dssLoads=self.dssCircuit.Loads
             self.dssTransformers=self.dssCircuit.Transformers
-
-            
-     def version_dss(self):    # specifies the version of OpenDSS used
-        return self.dssObj.Version            
-            
-     def compile_ckt_dss(self): # Compiling the OpenDSS circuit
+   
+    
+    def version_dss(self):    # specifies the version of OpenDSS used
+        return self.dssObj.Version             
+          
+    def compile_ckt_dss(self): # Compiling the OpenDSS circuit
         self.dssObj.ClearAll()
         self.dssText.Command="compile [" + self.filename +"]" 
         
-     def get_cktname_dss(self): # The circuit name
-        return self.dssObj.dssCircuit.Name
+    def get_cktname_dss(self): # The circuit name
+        return self.dssCircuit.Name    
     
-    
-     # def solve_snapshot_dss(self,loadmultFac): #solving snapshot powerflow for particular load multiplication factor
-     #    self.dssText.Command="Set Mode=SnapShot"
-     #    self.dssText.Command="Set ControlMode=OFF"
-     #    self.dssSolution.LoadMult=loadmultFac
-     #    self.dssSolution.Solve()
-     #    return self.dssObj
-        
-     # def get_results_dss(self): # total active and reactive power after power flow
-     #    P= -1*(self.dssCircuit.Totalpower[0]) #active power in kW
-     #    Q= -1*(self.dssCircuit.Totalpower[1]) #reactive power in kW
-     #    losses=self.dssCircuit.Losses
-     #    P_loss=(losses[0]) #active power loss in W
-     #    Q_loss=(losses[1]) #reactive power loss in W
-     #    return P,Q,P_loss,Q_loss    
-    
-     # def get_ckt_base(self): # calculates the base of the circuit
-     #  self.dssTransformers.First
-     #  KVA_base=self.dssTransformers.kva
-     #  KV_base=self.dssTransformers.kv
-     #  Z_base=((KV_base**2)*1000)/KVA_base
-     #  return(KVA_base,KV_base,Z_base)
+    def get_ckt_base(self):
+      self.dssTransformers.First
+      self.KVA_base=self.dssTransformers.kva
+      self.KV_base=self.dssTransformers.kv
+      self.Z_base=((self.KV_base**2)*1000)/self.KVA_base
+      return(self.KVA_base,self.KV_base,self.Z_base)
   
+    def get_AllBuses(self):
+        return self.dssCircuit.AllBusNames
     
-     # def get_AllBuses(self): #extract all bus names
-     #    return self.dssCircuit.AllBusNames
+    def get_AllLines(self):
+        return self.dssLines.AllNames    
+
+    def get_AllPDElements(self):
+        self.elem=[]
+        i=self.dssCircuit.PDElements.First
+        while i>0:
+              self.elem.append(self.dssCircuit.PDElements.Name)
+              i=self.dssCircuit.PDElements.Next
+        return (self.elem)  #PD Elements include Lines, Transformers and Capacitors
     
-     # def get_AllLines(self): #extract all Line names
-     #    return self.dssLines.AllNames
+    def get_BusLoads(self):
+        self.Load_dict=[]
+        i=self.dssCircuit.FirstPCElement() #set first power conversion element active
+        while i>0:
+              elname=self.dssCktElement.Name
+              if elname.split('.')[0]=='Load':
+                  name=elname.split('.')[1]
+                  bus=self.dssCktElement.Busnames[0].split('.')[0]
+                  self.dssLoads.Name=name
+                  P_load=self.dssLoads.kW
+                  Q_load=self.dssLoads.kvar
+                  self.Load_dict.append({'Name':name, 'Bus':bus, 'Pload':P_load,'Qload':Q_load})
+              i=self.dssCircuit.NextPCElement()
+        return(self.Load_dict)     
     
-     # def get_AllPDElements(self): #extract all Power delivery element names
-     #    elem=[]
-     #    i=self.dssCircuit.PDElements.First
-     #    while i>0:
-     #          elem.append(self.dssCircuit.PDElements.Name)
-     #          i=self.dssCircuit.PDElements.Next
-     #    return (elem)
-    
-     # def get_BusLoads(self): # Extract a dictionary of loads with their names and corresponding bus connection, active , reactive demand
-     #    Load_dict=[]
-     #    i=self.dssCircuit.FirstPCElement() #set first power conversion element active
-     #    while i>0:
-     #          elname=self.dssCktElement.Name
-     #          if elname.split('.')[0]=='Load':
-     #              name=elname.split('.')[1]
-     #              bus=self.dssCktElement.Busnames[0].split('.')[0]
-     #              self.dssLoads.Name=name
-     #              P_load=self.dssLoads.kW
-     #              Q_load=self.dssLoads.kvar
-     #              Load_dict.append({'Name':name, 'Bus':bus, 'Pload':P_load,'Qload':Q_load})
-     #          i=self.dssCircuit.NextPCElement()
-     #    return(Load_dict)  
-    
-         
-# Bus class contains the bus object details
+    def get_Sourcebus(self):
+        self.sources=[]
+        i=self.dssCircuit.Vsources.First
+        while i>0:
+             self.dssCircuit.SetActiveElement(self.dssCircuit.Vsources.Name)
+             self.sources.append(self.dssCircuit.ActiveCktElement.BusNames[0].split('.')[0])
+             i=self.dssCircuit.Vsources.Next
+        return(self.sources)
+            
+            
+    def solve_snapshot_dss(self,loadmultFac): #solving snapshot powerflow for particular load multiplication factor
+        self.dssText.Command="Set Mode=SnapShot"
+        self.dssText.Command="Set ControlMode=OFF"
+        self.dssSolution.LoadMult=loadmultFac
+        self.dssSolution.Solve() 
+        
+        
+    def get_results_dss(self): # total active and reactive power after power flow
+        self.P= -1*(self.dssCircuit.Totalpower[0]) #active power in kW
+        self.Q= -1*(self.dssCircuit.Totalpower[1]) #reactive power in kW
+        losses=self.dssCircuit.Losses
+        self.P_loss=(losses[0]/1000) #active power loss in kW
+        self.Q_loss=(losses[1]/1000) #reactive power loss in kW
+        return self.P,self.Q,self.P_loss,self.Q_loss           
+        
+        
+        
+ # Bus class contains the bus object details
 class Bus:
     def __init__(self,DSSCktobj,bus_name):
         """
@@ -124,7 +131,7 @@ class Bus:
         # Vmax=max(Vmag)
         self.Vmag = Vmag # 3 phase pu voltage at the buses
         # self.Vang = Vang
-        # self.nodes=nodes
+        self.nodes=nodes
         # self.Vmax=Vmax
         # self.Vmin=Vmin
 
@@ -140,15 +147,13 @@ class Branch:  # to extract properties of branch
             nphases - number of phases
             Cap - average current flow
             
-        """
-        
+        """        
         # Calculating base current
         DSSCktobj.dssTransformers.First
         KVA_base=DSSCktobj.dssTransformers.kva # S base
         KV_base=DSSCktobj.dssTransformers.kv #L-L V base
         I_base=KVA_base/(math.sqrt(3)*KV_base)
-        
-        
+               
         DSSCktobj.dssCircuit.SetActiveElement(branch_fullname)
         
         bus_connections=DSSCktobj.dssCktElement.BusNames
@@ -170,10 +175,9 @@ class Branch:  # to extract properties of branch
         self.bus_to=bus2
         #self.nphases=nphases
         self.Cap=I_avg
-        self.MaxCap=MaxCap
+        self.MaxCap=MaxCap 
         
-
-
+     
 def CktModSetup(DSSfile,sectional_swt,tie_swt): # give tie switches and sectionalizing switches as input
     DSSCktobj= DSS(DSSfile) #create a circuit object
     DSSCktobj.compile_ckt_dss() #compiling the circuit #compiling should only be done once in the beginning
@@ -214,8 +218,4 @@ def graph_struct(DSSCktobj):
             DSSCktobj.dssCircuit.SetActiveElement(e)
             G_original.add_edge(sr_node, tar_node, label=name)
     
-    return G_original
-
-
-        
-        
+    return G_original    
