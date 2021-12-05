@@ -12,12 +12,12 @@ from gym.utils import seeding
 
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.WARNING)
 
-class openDSSenv(gym.Env):
+class openDSSenv34(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
         
-        print("Initializing 13-bus env with sectionalizing and tie switches")
+        print("Initializing 123-bus env with sectionalizing and tie switches")
         self.DSSCktObj,G_init=initialize() # the DSSCircuit is set up and initialized
         # Set up action and observation space variables
         n_actions=len(sectional_swt)+len(tie_swt) # the switching actions 

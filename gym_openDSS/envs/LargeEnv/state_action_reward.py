@@ -1,7 +1,6 @@
 """
 In this file the functions to evaluate the state, reward are defined and also the action is implemented
 """
-
 import win32com.client
 import numpy as np
 import networkx as nx
@@ -122,7 +121,7 @@ def Topol_Constr(DSSCktObj,G_scenario):
         topol_viol=M
     return topol_viol
 
-# Consraint for voltage violation 
+# Constraint for voltage violation 
 def Volt_Constr(Vmagpu,nodes_conn):
     #Input: The pu magnitude of node voltages at all buses, node activated or node phase of all buses
     V_upper=1.10
@@ -154,7 +153,6 @@ def Flow_Constr(I_flow):
             flow_viol=0
     return flow_viol
 
-            
 def get_reward(observ_dict):
     #Input: A dictionary describing the state of the network
     #Output: reward        
@@ -162,12 +160,3 @@ def get_reward(observ_dict):
     # TO DO: Voltage and Current violations multiplier
     # Should I use a multiplier for loss or scale down the penalty for topological violation
     return reward
-
-
-
-
-
-
-    
-    
-    
