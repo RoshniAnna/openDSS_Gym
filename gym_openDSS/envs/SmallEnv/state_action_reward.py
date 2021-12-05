@@ -71,6 +71,15 @@ def get_state(DSSCktObj,G_init):
         branchname=e[2]['label']
         I=Branch(DSSCktObj, branchname).Cap
         I_flow.append(I)
+
+    # The convergence test and violation penalty   
+    if DSSCktObj.dssSolution.Converged:
+       conv_flag=1
+       Conv_const=0
+    else:
+       conv_flag=0
+       Conv_const=1000  # NonConvergence penalty   
+
     
     # The topological constraints
     topol_const=Topol_Constr(DSSCktObj,G_scenario)    
@@ -79,7 +88,7 @@ def get_state(DSSCktObj,G_init):
     # The branch flow violation
     flow_viol=Flow_Constr(I_flow)
         
-    return {"loss":P_loss,"NodeFeat(BusVoltage)":np.array(Vmagpu), "EdgeFeat(branchflow)":np.array(I_flow),"Adjacency":np.array(Adj_mat.todense()), "TopologicalConstr":topol_const, "VoltageViolation":V_viol, "FlowViolation":flow_viol}
+    return {"loss":P_loss,"NodeFeat(BusVoltage)":np.array(Vmagpu), "EdgeFeat(branchflow)":np.array(I_flow),"Adjacency":np.array(Adj_mat.todense()), "TopologicalConstr":topol_const, "VoltageViolation":V_viol, "FlowViolation":flow_viol, "Convergence":Conv_const}
 
     
 def take_action(DSSCktObj,action):
@@ -104,7 +113,7 @@ def take_action(DSSCktObj,action):
                DSSCktObj.dssText.command='close ' + Swobj +' term=1'      #switching the line close
            i=DSSCircuit.SwtControls.Next     
           
-    DSSCircuit.Solution.Solve()
+    DSSCircuit.Solution.Solve() #solving the circuit to implement actions
     return DSSCktObj
 
 # Assigns a very high penalty for Loop formation and Node Isolation
@@ -156,7 +165,7 @@ def Flow_Constr(I_flow):
 def get_reward(observ_dict):
     #Input: A dictionary describing the state of the network
     #Output: reward        
-    reward= -observ_dict['loss']-observ_dict['TopologicalConstr']
+    reward= -observ_dict['loss']-observ_dict['TopologicalConstr']-observ_dict['Convergence']
     # TO DO: Voltage and Current violations multiplier
     # Should I use a multiplier for loss or scale down the penalty for topological violation
     return reward

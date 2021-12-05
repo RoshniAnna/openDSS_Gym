@@ -29,4 +29,3 @@ def initialize():
     G_init=graph_struct(DSSCktobj)
     return DSSCktobj,G_init,conv_flag
 
-

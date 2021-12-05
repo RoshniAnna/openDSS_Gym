@@ -181,7 +181,10 @@ class Branch:  # to extract properties of branch
 def CktModSetup(DSSfile,sectional_swt,tie_swt): # give tie switches and sectionalizing switches as input
     DSSCktobj= DSS(DSSfile) #create a circuit object
     DSSCktobj.compile_ckt_dss() #compiling the circuit #compiling should only be done once in the beginning
-    
+    #Setting the iteration limits higher and disabling the warning message window
+    DSSCktobj.dssText.command = "Set Maxiterations=5000" 
+    DSSCktobj.dssText.command = "Set maxcontroliter=5000"
+    DSSCktobj.AllowForms=False    
     ##### Make additions #####
     for sline in sectional_swt:  # the sectionalizing switch control is established (the normal state is closed)
         DSSCktobj.dssText.command=('New swtcontrol.swSec'+ str(sline['no']) +' SwitchedObj=Line.'+ sline['line'] +' Normal=c') #normally close      

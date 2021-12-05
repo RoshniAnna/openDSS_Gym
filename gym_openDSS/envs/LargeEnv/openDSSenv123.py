@@ -7,28 +7,30 @@ import logging
 
 from DSS_Initialize import * 
 from DSS_CircuitSetup import *
+from state_action_reward import *
 
 from gym.utils import seeding
 
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.WARNING)
 
-class openDSSenv34(gym.Env):
+class openDSSenv123(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
         
         print("Initializing 123-bus env with sectionalizing and tie switches")
-        self.DSSCktObj,G_init=initialize() # the DSSCircuit is set up and initialized
+        self.DSSCktObj, self.G_init,conv_flag=initialize() # the DSSCircuit is set up and initialized
         # Set up action and observation space variables
         n_actions=len(sectional_swt)+len(tie_swt) # the switching actions 
         self.action_space = spaces.MultiBinary(n_actions)
         self.observation_space=spaces.Dict({"loss":spaces.Box(low=0,high=2,shape=(1,)),
-            "NodeFeat(BusVoltage)":spaces.Box(low=0, high=2, shape=(len(G_init.nodes()),3)),
-            "EdgeFeat(branchflow)":spaces.Box(low=0, high=2,shape=(len(G_init.edges()),)),
-            "Adjacency":spaces.Box(low=0, high=1,shape=(len(G_init.nodes()),len(G_init.nodes()))),
+            "NodeFeat(BusVoltage)":spaces.Box(low=0, high=2, shape=(len(self.G_init.nodes()),3)),
+            "EdgeFeat(branchflow)":spaces.Box(low=0, high=2,shape=(len(self.G_init.edges()),)),
+            "Adjacency":spaces.Box(low=0, high=1,shape=(len(self.G_init.nodes()),len(self.G_init.nodes()))),
             "TopologicalConstr":spaces.Box(low=0,high=10000,shape=(1,)),
             "VoltageViolation":spaces.Box(low=0,high=1000,shape=(1,)),
-            "FlowViolation":spaces.Box(low=0,high=1000,shape=(1,))
+            "FlowViolation":spaces.Box(low=0,high=1000,shape=(1,)),
+            "Convergence":spaces.Box(low=0,high=1,shape=(1,))
             })
         print('Env initialized')
         
@@ -36,12 +38,11 @@ class openDSSenv34(gym.Env):
 
     def step(self, action):
         # Getting observation before action is executed
-        observation = get_state(self.DSSCktObj, G_init) #function to get state of the network        
+        observation = get_state(self.DSSCktObj, self.G_init) #function to get state of the network        
         # Executing the switching action
-        self.DSSCktObj=take_action(self.DSSCktObj,action) #function to implement the action    
-        self.DSSCktObj.dssSolution.Solve()  # Solve Circuit        
+        self.DSSCktObj=take_action(self.DSSCktObj,action) #function to implement the action      
         #Getting observation after action is taken
-        obs_post_action = get_state(self.DSSCktObj)
+        obs_post_action = get_state(self.DSSCktObj,self.G_init)
         reward = get_reward(obs_post_action) #function to calculate reward
         done = True
         info = {}
@@ -50,9 +51,9 @@ class openDSSenv34(gym.Env):
 
 
     def reset(self):
+        # In reset function I ensure that the beginning state at each episode has converged powerflow
         logging.info('resetting environment...')
-        self.DSSCktObj,G_init=initialize() #initial set up
-        self.DSSCktObj.dssSolution.Solve()  # Solve Circuit
+        self.DSSCktObj,self.G_init,conv_flag=initialize() #initial set up
         # Different Load Configurations
         umin=0.1 #minimum load multiplication factor
         umax=2.0  
@@ -65,15 +66,19 @@ class openDSSenv34(gym.Env):
         #       i=self.DSSCktObj.dssLoads.Next
         # self.DSSCktObj.dssSolution.Solve() #solving and setting the new load
         
-        
+        conv_flag=0 # Flag to indicate convergence (if 0 not converged, 1 converges)
         # Approach 2 -------------randomly set the all the loads in the network to a new value
-        loadfactors=np.random.uniform(umin, umax, len(self.DSSCktObj.dssLoads.AllNames))
-        i=self.DSSCktObj.dssLoads.First
-        while i>0:         
-              self.DSSCktObj.dssLoads.kW = round(self.DSSCktObj.dssLoads.kW * loadfactors[i-1],2)
-              i=self.DSSCktObj.dssLoads.Next
-        self.DSSCktObj.dssSolution.Solve() #solving and setting the new load
-        
+        while conv_flag==0: 
+              loadfactors=np.random.uniform(umin, umax, len(self.DSSCktObj.dssLoads.AllNames))
+              i=self.DSSCktObj.dssLoads.First
+              while i>0:         
+                    self.DSSCktObj.dssLoads.kW = round(self.DSSCktObj.dssLoads.kW * loadfactors[i-1],2)
+                    i=self.DSSCktObj.dssLoads.Next
+              self.DSSCktObj.dssSolution.Solve() #solving and setting the new load
+              if self.DSSCktObj.dssSolution.Converged:
+                  conv_flag=1
+              else:
+                  conv_flag=0
         # To observe if the load is changed
         # self.All_Loads={}
         # i=self.DSSCktObj.dssLoads.First
@@ -83,7 +88,7 @@ class openDSSenv34(gym.Env):
         # self.All_Loads
   
         logging.info("reset complete\n")
-        obs = get_state(self.DSSCktObj)
+        obs = get_state(self.DSSCktObj,self.G_init)
         return obs
 
 
