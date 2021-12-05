@@ -22,7 +22,11 @@ def initialize():
     DSSfile=r""+ FolderName+ "\ieee34Mod1.dss"
     DSSCktobj=CktModSetup(DSSfile,sectional_swt,tie_swt) # initially the sectionalizing switches close and tie switches open
     DSSCktobj.dssSolution.Solve() #solving snapshot power flows
+    if DSSCktobj.dssSolution.Converged:
+       conv_flag=1
+    else:
+       conv_flag=0
     G_init=graph_struct(DSSCktobj)
-    return DSSCktobj,G_init
+    return DSSCktobj,G_init,conv_flag
 
 

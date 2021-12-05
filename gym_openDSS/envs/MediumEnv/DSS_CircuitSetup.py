@@ -4,14 +4,12 @@ The objects for circuit, bus, and branch are also set up for further use in the 
 This file also includes function to modify the base DSS circuit with sectionalizing and tie switch information.
 The translation of DSS Circuit into a graph structure is also defined here.
 """
-
 import win32com.client
 import numpy as np
 import math
 import networkx as nx
 
-class DSS():  # to initialize the DSS circuit object and extract results
-      
+class DSS():  # to initialize the DSS circuit object and extract results      
     def __init__(self,filename): 
         
         self.filename=filename
@@ -85,16 +83,14 @@ class DSS():  # to initialize the DSS circuit object and extract results
              self.dssCircuit.SetActiveElement(self.dssCircuit.Vsources.Name)
              self.sources.append(self.dssCircuit.ActiveCktElement.BusNames[0].split('.')[0])
              i=self.dssCircuit.Vsources.Next
-        return(self.sources)
-            
+        return(self.sources)            
             
     def solve_snapshot_dss(self,loadmultFac): #solving snapshot powerflow for particular load multiplication factor
         self.dssText.Command="Set Mode=SnapShot"
         self.dssText.Command="Set ControlMode=OFF"
         self.dssSolution.LoadMult=loadmultFac
         self.dssSolution.Solve() 
-        
-        
+                
     def get_results_dss(self): # total active and reactive power after power flow
         self.P= -1*(self.dssCircuit.Totalpower[0]) #active power in kW
         self.Q= -1*(self.dssCircuit.Totalpower[1]) #reactive power in kW
@@ -102,8 +98,6 @@ class DSS():  # to initialize the DSS circuit object and extract results
         self.P_loss=(losses[0]/1000) #active power loss in kW
         self.Q_loss=(losses[1]/1000) #reactive power loss in kW
         return self.P,self.Q,self.P_loss,self.Q_loss           
-        
-        
         
  # Bus class contains the bus object details
 class Bus:
@@ -145,8 +139,7 @@ class Branch:  # to extract properties of branch
             bus_fr - from bus name
             bus_to - to bus name         
             nphases - number of phases
-            Cap - average current flow
-            
+            Cap - average current flow            
         """        
         # Calculating base current
         DSSCktobj.dssTransformers.First
@@ -176,12 +169,14 @@ class Branch:  # to extract properties of branch
         #self.nphases=nphases
         self.Cap=I_avg
         self.MaxCap=MaxCap 
-        
-     
+             
 def CktModSetup(DSSfile,sectional_swt,tie_swt): # give tie switches and sectionalizing switches as input
     DSSCktobj= DSS(DSSfile) #create a circuit object
     DSSCktobj.compile_ckt_dss() #compiling the circuit #compiling should only be done once in the beginning
-    
+    #Setting the iteration limits higher and disabling the warning message window
+    DSSCktobj.dssText.command = "Set Maxiterations=5000" 
+    DSSCktobj.dssText.command = "Set maxcontroliter=5000"
+    DSSCktobj.AllowForms=False
     ##### Make additions #####
     for sline in sectional_swt:  # the sectionalizing switch control is established (the normal state is closed)
         DSSCktobj.dssText.command=('New swtcontrol.swSec'+ str(sline['no']) +' SwitchedObj=Line.'+ sline['line'] +' Normal=c') #normally close      
@@ -191,12 +186,10 @@ def CktModSetup(DSSfile,sectional_swt,tie_swt): # give tie switches and sectiona
         DSSCktobj.dssText.command=('New swtcontrol.swTie'+ str(tline['no']) +' SwitchedObj=Line.'+ tline['name'] +' Normal=o') #normally open  
         Swobj='Line.'+ tline['name']
         DSSCktobj.dssCircuit.SetActiveElement(Swobj)
-        DSSCktobj.dssText.command='open ' + Swobj +' term=1'       #switching the line open
+        DSSCktobj.dssText.command='open ' + Swobj +' term=1'       #switching the line open        
     return DSSCktobj
 
-
 # For switches if Normal State= 1 it is open and if Normal State= 2  it is close in DSS
-
 
 # ---------Graph formation and Adjacency matrix--------------#
 def graph_struct(DSSCktobj):       
@@ -216,6 +209,5 @@ def graph_struct(DSSCktobj):
             tar_node=branch_obj.bus_to.split('.')[0] #extracting target bus of branch
             name=e
             DSSCktobj.dssCircuit.SetActiveElement(e)
-            G_original.add_edge(sr_node, tar_node, label=name)
-    
+            G_original.add_edge(sr_node, tar_node, label=name)    
     return G_original    
