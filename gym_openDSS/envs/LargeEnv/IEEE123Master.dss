@@ -180,8 +180,8 @@ New Line.Sw6    phases=3  Bus1=61     Bus2=61s    r1=1e-3 r0=1e-3 x1=0.000 x0=0.
 ! NORMALLY OPEN SWITCHES; DEFINED AS SHORT LINE TO OPEN BUS SO WE CAN SEE OPEN POINT VOLTAGES. 
 ! COULD ALSO BE DEFINED AS DISABLED OR THE TERMINCAL COULD BE OPENED AFTER BEING DEFINED
 
-New Line.Sw7    phases=3  Bus1=151    Bus2=300_OPEN   r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
-New Line.Sw8    phases=1  Bus1=54.1   Bus2=94_OPEN.1  r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
+!New Line.Sw7    phases=3  Bus1=151    Bus2=300_OPEN   r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
+!New Line.Sw8    phases=1  Bus1=54.1   Bus2=94_OPEN.1  r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
 
 
 ! LOAD TRANSFORMER AT 61s/610

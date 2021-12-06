@@ -168,3 +168,4 @@ def get_reward(observ_dict):
     # TO DO: Voltage and Current violations multiplier
     # Should I use a multiplier for loss or scale down the penalty for topological violation
     return reward
+

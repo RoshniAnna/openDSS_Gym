@@ -56,8 +56,10 @@ def get_state(DSSCktObj,G_init):
     # Extracting pu loss for the DSS circuit object 
     DSSCktObj.dssTransformers.First
     KVA_base=DSSCktObj.dssTransformers.kva
-    P_loss=(DSSCktObj.dssCircuit.Losses[0])/(1000*KVA_base)
-    Q_loss=(DSSCktObj.dssCircuit.Losses[1])/(1000*KVA_base)
+    # P_loss=(DSSCktObj.dssCircuit.Losses[0])/(1000*KVA_base)
+    # Q_loss=(DSSCktObj.dssCircuit.Losses[1])/(1000*KVA_base)
+    P_loss=(DSSCktObj.dssCircuit.Losses[0])/(1000)
+    Q_loss=(DSSCktObj.dssCircuit.Losses[1])/(1000)
     # Extracting the pu node voltages at all buses
     Vmagpu=[]
     nodes_conn=[]
@@ -119,7 +121,7 @@ def take_action(DSSCktObj,action):
 def Topol_Constr(DSSCktObj,G_scenario):
     #Input: The DSS Circuit object which contains system state and the corresponding graph scenario
     #Output: The constraint violation penalty
-    M=1000 # a large number assigned for penalty
+    M=10000 # a large number assigned for penalty
     no_nodes=len(G_scenario.nodes())
     no_edges=len(G_scenario.edges())
     connectn=nx.is_connected(G_scenario)
