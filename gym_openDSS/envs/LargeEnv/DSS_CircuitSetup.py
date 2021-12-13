@@ -190,7 +190,11 @@ def CktModSetup(DSSfile,sectional_swt,tie_swt): # give tie switches and sectiona
         DSSCktobj.dssText.command=('New swtcontrol.swSec'+ str(sline['no']) +' SwitchedObj=Line.'+ sline['line'] +' Normal=c') #normally close      
     
     for tline in tie_swt: # First create new lines corresponding to tie lines
-        DSSCktobj.dssText.command=('New Line.'+ tline['name'] + ' Bus1=' + tline['from node']+ tline['from conn']  + ' Bus2=' + tline['to node'] +tline['to conn'] + ' LineCode=' + tline['code'] + ' Length=' + str(tline['length']))
+        if tline['name']=='Sw7' or tline['name']=='Sw8':
+           DSSCktobj.dssText.command=('New Line.'+ tline['name'] + ' Bus1=' + tline['from node']+ tline['from conn']  + ' Bus2=' + tline['to node'] +tline['to conn'] + '  r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001')
+        else:    
+            DSSCktobj.dssText.command=('New Line.'+ tline['name'] + ' Bus1=' + tline['from node']+ tline['from conn']  + ' Bus2=' + tline['to node'] +tline['to conn'] + ' LineCode=' + tline['code'] + ' Length=' + str(tline['length']))
+        
         DSSCktobj.dssText.command=('New swtcontrol.swTie'+ str(tline['no']) +' SwitchedObj=Line.'+ tline['name'] +' Normal=o') #normally open  
         Swobj='Line.'+ tline['name']
         DSSCktobj.dssCircuit.SetActiveElement(Swobj)
